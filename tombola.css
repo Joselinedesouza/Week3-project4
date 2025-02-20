@@ -1,0 +1,35 @@
+body {
+    background-color: aqua;
+    font-family: serif ;
+    display: block;
+    width: 400px;
+    padding: 30px 30px 30px 30px;
+
+}
+#tabella {
+    justify-self: center;
+    grid-column: 1;
+     display: grid;
+    grid-template-columns: repeat(10,90px);
+    text-align: center;
+    font-size: 2rem;
+    justify-content: stretch;
+}
+
+span {
+    padding:7px;
+    border: solid 1px black;
+    margin:14px;
+    background: white;
+    width: 40px;
+    height: 40px;
+
+}
+span:hover{
+    cursor: pointer;
+}
+
+.extracted-number {
+    text-align: center;
+    margin-top: 80px;
+}
