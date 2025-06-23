@@ -1,71 +1,165 @@
-//Il codice dentro questa funzione viene eseguito solo dopo che la pagina è completamente caricata. -> addEventListener("DOMContentLoaded")
-// per evitare errori se cerchiamo di modificare elementi html prima che esistano
 document.addEventListener("DOMContentLoaded", function () {
-  // extractedNumberDisplay → Il testo che mostra il numero estratto.
   const board = document.getElementById("board");
-  //extractButton -> Il bottone che estrae un numero.
   const extractButton = document.getElementById("extractNumber");
-  // resetButton → Il bottone per resettare il gioco.
   const resetButton = document.getElementById("resetGame");
-  // extractedNumberDisplay → Il testo che mostra il numero estratto.
   const extractedNumberDisplay = document.getElementById("extractedNumber");
+  const cardsContainer = document.getElementById("cardsContainer");
 
-  //numbers = Crea un array con i numeri da 1 a 90.
-  // Array.from({ length: 90 }) → Crea un array di 90 elementi.
-  // (_, i) => i + 1 → Riempie l'array con i numeri da 1 a 90.
-  let numbers = Array.from({ length: 90 }, (_, i) => i + 1); // Array numeri da 1 a 90
-
-  //Avremo potuto fare la stessa identica cosa con un ciclo for
-  //Crea un Array vuoto
-  // let numbers = [];
-  //Usa un ciclo for per aggiungere i numeri da 1 a 90 con .push(i).
-  //  for (let i = 1; i <= 90; i++) {
-  // numbers.push(i);
-  //  }
-
+  let numbers = Array.from({ length: 90 }, (_, i) => i + 1);
   let extractedNumbers = [];
+  let claimedPrizes = new Set();
+  let cards = [];
+  let usedNumbers = new Set(); // Per evitare numeri duplicati sulle cartelle
 
   function createBoard() {
-    board.innerHTML = ""; // Svuota la board prima di rigenerarla
+    board.innerHTML = "";
     for (let i = 1; i <= 90; i++) {
       const cell = document.createElement("div");
       cell.classList.add("cell");
       cell.textContent = i;
-      cell.setAttribute("id", `num-${i}`);
+      cell.id = `num-${i}`;
       board.appendChild(cell);
     }
   }
 
-  createBoard(); // Genera la board all'inizio
+  function generateCard() {
+    const columns = Array.from({ length: 9 }, (_, i) => {
+      const min = i === 0 ? 1 : i * 10;
+      const max = i === 8 ? 90 : i * 10 + 9;
+      const colNums = [];
+      while (colNums.length < 3) {
+        const num = Math.floor(Math.random() * (max - min + 1)) + min;
+        if (!colNums.includes(num) && !usedNumbers.has(num)) {
+          colNums.push(num);
+          usedNumbers.add(num);
+        }
+      }
+      return colNums.sort((a, b) => a - b);
+    });
 
-  // Funzione per estrarre un numero
-  extractButton.addEventListener("click", function () {
-    if (numbers.length === 0) {
-      extractButton.disabled = true;
-      extractedNumberDisplay.textContent =
-        "Tutti i numeri sono stati estratti!";
-      return;
+    const card = Array.from({ length: 3 }, () => Array(9).fill(""));
+
+    for (let col = 0; col < 9; col++) {
+      const nums = columns[col];
+      nums.forEach((num, i) => {
+        card[i][col] = num;
+      });
     }
 
-    const randomIndex = Math.floor(Math.random() * numbers.length);
-    const extractedNumber = numbers.splice(randomIndex, 1)[0]; // Rimuove il numero estratto
-    extractedNumbers.push(extractedNumber);
+    for (let row of card) {
+      let indices = [...Array(9).keys()];
+      while (row.filter((n) => n !== "").length > 5) {
+        const idx = indices.splice(
+          Math.floor(Math.random() * indices.length),
+          1
+        )[0];
+        row[idx] = "";
+      }
+    }
 
-    extractedNumberDisplay.textContent = `Numero estratto: ${extractedNumber}`;
+    return card;
+  }
 
-    // Evidenzia il numero estratto sulla tabella
-    document
-      .getElementById(`num-${extractedNumber}`)
-      .classList.add("extracted");
+  function drawCards() {
+    cardsContainer.innerHTML = "";
+    cards.forEach((card, index) => {
+      const title = document.createElement("h4");
+      title.textContent = `Cartella ${index + 1}`;
+      cardsContainer.appendChild(title);
+      const cardDiv = document.createElement("div");
+      cardDiv.classList.add("card");
+
+      card.forEach((row, r) => {
+        row.forEach((cell, c) => {
+          const cellDiv = document.createElement("div");
+          cellDiv.classList.add("card-cell");
+          if (cell !== "") {
+            cellDiv.textContent = cell;
+            cellDiv.id = `card-${index}-${r}-${c}`;
+          }
+          cardDiv.appendChild(cellDiv);
+        });
+      });
+      cardsContainer.appendChild(cardDiv);
+    });
+  }
+
+  function checkWinnings() {
+    const prizeLevels = {
+      2: "Ambo",
+      3: "Terno",
+      4: "Quaterna",
+      5: "Cinquina",
+    };
+
+    let awardedPrizeTypes = new Set([...claimedPrizes]); // Copia i premi già assegnati
+
+    cards.forEach((card, cardIndex) => {
+      card.forEach((row, rowIndex) => {
+        const matched = row.filter((n) => extractedNumbers.includes(n));
+        const matchCount = matched.length;
+
+        const prizeName = prizeLevels[matchCount];
+        if (prizeName && !awardedPrizeTypes.has(prizeName)) {
+          alert(
+            `🎉 ${prizeName} sulla cartella ${cardIndex + 1}, riga ${
+              rowIndex + 1
+            }`
+          );
+          claimedPrizes.add(prizeName);
+          awardedPrizeTypes.add(prizeName);
+        }
+      });
+
+      const allNums = card.flat().filter((n) => n !== "");
+      const tombolaKey = "Tombola";
+      if (
+        allNums.every((n) => extractedNumbers.includes(n)) &&
+        !claimedPrizes.has(tombolaKey)
+      ) {
+        alert(`🎉🎉🎉 TOMBOLA sulla cartella ${cardIndex + 1}!`);
+        claimedPrizes.add(tombolaKey);
+      }
+    });
+  }
+
+  extractButton.addEventListener("click", () => {
+    if (numbers.length === 0) return;
+    const i = Math.floor(Math.random() * numbers.length);
+    const num = numbers.splice(i, 1)[0];
+    extractedNumbers.push(num);
+
+    extractedNumberDisplay.textContent = `Numero estratto: ${num}`;
+
+    const boardCell = document.getElementById(`num-${num}`);
+    if (boardCell) boardCell.classList.add("extracted");
+
+    cards.forEach((card, ci) => {
+      card.forEach((row, ri) => {
+        row.forEach((n, ci2) => {
+          if (n === num) {
+            const cell = document.getElementById(`card-${ci}-${ri}-${ci2}`);
+            if (cell) cell.classList.add("extracted");
+          }
+        });
+      });
+    });
+
+    checkWinnings();
   });
 
-  // Funzione per resettare il gioco
-  resetButton.addEventListener("click", function () {
-    numbers = Array.from({ length: 90 }, (_, i) => i + 1); // Reset numeri
+  resetButton.addEventListener("click", () => {
+    numbers = Array.from({ length: 90 }, (_, i) => i + 1);
     extractedNumbers = [];
+    claimedPrizes = new Set();
+    usedNumbers = new Set();
     extractedNumberDisplay.textContent = "Numero estratto: --";
-    extractButton.disabled = false; // Riattiva il bottone di estrazione
-
-    createBoard(); // Rigenera la board
+    createBoard();
+    cards = [generateCard(), generateCard(), generateCard()];
+    drawCards();
   });
+
+  createBoard();
+  cards = [generateCard(), generateCard(), generateCard()];
+  drawCards();
 });

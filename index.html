@@ -3,18 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tombola JS</title>
+    <title>Tombola</title>
     <link rel="stylesheet" href="tombola.css" />
   </head>
   <body>
-    <div id="container">
-      <h1>La Mia Tombola</h1>
-      <button id="extractNumber">Estrai numero</button>
-      <button id="resetGame">Reset</button>
-
-      <p id="extractedNumber">Numero estratto: --</p>
-      <div id="board"></div>
+    <h1 class="rainbow-title">🎊Tombola🎊</h1>
+    <div id="game-container">
+      <div id="left-column">
+        <button id="extractNumber">Estrai numero</button>
+        <button id="resetGame">Reset</button>
+        <p id="extractedNumber">Numero estratto: --</p>
+        <div id="board"></div>
+      </div>
+      <div id="right-column">
+        <h2 class="h2">Cartelle Giocatori</h2>
+        <div id="cardsContainer"></div>
+      </div>
     </div>
+    <footer>
+      <p class="glow-text">BUONA FORTUNA!</p>
+    </footer>
 
     <script src="tombola.js"></script>
   </body>
